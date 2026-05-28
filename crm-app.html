@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CRM Pro" />
+  <title>CRM Inmobiliario</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background: #0a0a0f;
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding-bottom: 40px;
+    }
+
+    /* NAV */
+    .nav {
+      display: flex;
+      background: #0f0f18;
+      border-bottom: 1px solid #1e1e2e;
+      padding: 0 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav::-webkit-scrollbar { display: none; }
+    .nav-btn {
+      flex-shrink: 0;
+      padding: 14px 16px;
+      background: none;
+      border: none;
+      color: #6b7280;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .nav-btn.active { color: #10b981; border-bottom-color: #10b981; }
+
+    /* SCREENS */
+    .screen { display: none; padding: 20px; max-width: 600px; margin: 0 auto; }
+    .screen.active { display: block; }
+
+    /* HEADER */
+    .header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .header-icon {
+      width: 44px; height: 44px; border-radius: 14px;
+      background: linear-gradient(135deg, #10b981, #0d9488);
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
+    }
+    .header h1 { font-size: 20px; font-weight: 700; }
+    .header p { font-size: 12px; color: #6b7280; margin-top: 2px; }
+
+    /* CARDS */
+    .card {
+      background: #13131f;
+      border: 1px solid #1e1e2e;
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+    .card-title { font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
+
+    /* TEXTAREA */
+    textarea {
+      width: 100%;
+      background: #0f0f18;
+      border: 1px solid #2a2a3a;
+      border-radius: 14px;
+      padding: 14px 52px 14px 14px;
+      color: white;
+      font-size: 15px;
+      line-height: 1.6;
+      outline: none;
+      resize: none;
+      font-family: inherit;
+      transition: border 0.3s;
+    }
+    textarea:focus { border-color: #10b981; }
+    textarea.recording { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
+
+    /* MIC WRAPPER */
+    .input-wrap { position: relative; }
+    .mic-btn {
+      position: absolute; top: 12px; right: 12px;
+      width: 36px; height: 36px; border-radius: 50%;
+      border: none; background: #2a2a3a; color: white;
+      font-size: 17px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .mic-btn.recording { background: #10b981; box-shadow: 0 0 0 4px rgba(16,185,129,0.2); }
+
+    .recording-indicator {
+      display: none; align-items: center; gap: 8px;
+      color: #10b981; font-size: 13px; margin-top: 8px;
+    }
+    .recording-indicator.visible { display: flex; }
+    .rec-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #10b981; animation: blink 1s infinite;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    /* BUTTONS */
+    .btn {
+      width: 100%; padding: 15px; border-radius: 14px; border: none;
+      font-weight: 700; font-size: 16px; cursor: pointer;
+      transition: all 0.2s; margin-top: 12px;
+    }
+    .btn-primary { background: linear-gradient(135deg, #10b981, #0d9488); color: white; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:disabled { background: #1a2a1a; color: #4a5a4a; cursor: not-allowed; }
+    .btn-success { background: #052e16; color: #10b981; cursor: not-allowed; }
+    .btn-loading { background: #1a2a1a; color: #4a5a4a; cursor: not-allowed; }
+    .btn-save { background: #10b981; color: white; }
+    .btn-save:active { transform: scale(0.98); }
+
+    /* RESULT */
+    .result-card {
+      background: #0f0f18;
+      border: 1px solid #1e2e1e;
+      border-radius: 16px;
+      overflow: hidden;
+      margin-top: 16px;
+    }
+    .result-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid #1e2e1e;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .result-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; }
+    .result-label { font-size: 13px; color: #9ca3af; }
+    .result-rows { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+    .result-row { display: flex; gap: 12px; }
+    .result-key { color: #6b7280; font-size: 13px; min-width: 110px; flex-shrink: 0; }
+    .result-val { color: white; font-size: 14px; }
+    .result-actions { padding: 0 16px 16px; }
+
+    /* ALERT */
+    .alert {
+      padding: 12px 16px; border-radius: 12px;
+      font-size: 14px; margin-top: 12px;
+    }
+    .alert-error { background: #1a0505; color: #f87171; border: 1px solid #2a0505; }
+    .alert-success { background: #052e16; color: #10b981; border: 1px solid #0a4a22; }
+
+    /* EXAMPLES */
+    .examples { margin-top: 20px; }
+    .examples-title { color: #4b5563; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .example-item {
+      padding: 11px 14px; border-radius: 10px;
+      border: 1px solid #1e1e2e; color: #6b7280;
+      font-size: 13px; margin-bottom: 8px;
+      cursor: pointer; line-height: 1.5; transition: all 0.2s;
+    }
+    .example-item:hover { border-color: #2a2a4a; color: #9ca3af; }
+
+    /* SECTION TITLE */
+    .section-title {
+      font-size: 22px; font-weight: 700; margin-bottom: 6px;
+    }
+    .section-sub { font-size: 14px; color: #6b7280; margin-bottom: 20px; }
+
+    /* INPUT FIELD */
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 13px; color: #9ca3af; margin-bottom: 6px; font-weight: 500; }
+    .field input, .field select {
+      width: 100%; background: #0f0f18; border: 1px solid #2a2a3a;
+      border-radius: 12px; padding: 12px 14px; color: white;
+      font-size: 15px; outline: none; font-family: inherit;
+      transition: border 0.2s; appearance: none;
+    }
+    .field input:focus, .field select:focus { border-color: #10b981; }
+    .field select option { background: #1a1a2e; }
+
+    /* BADGE */
+    .badge {
+      display: inline-block; padding: 3px 10px; border-radius: 20px;
+      font-size: 12px; font-weight: 600;
+    }
+    .badge-red { background: rgba(239,68,68,0.15); color: #f87171; }
+    .badge-green { background: rgba(16,185,129,0.15); color: #10b981; }
+    .badge-yellow { background: rgba(234,179,8,0.15); color: #facc15; }
+    .badge-blue { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .badge-purple { background: rgba(168,85,247,0.15); color: #c084fc; }
+
+    /* ABOUT */
+    .about-item { display: flex; gap: 14px; margin-bottom: 16px; align-items: flex-start; }
+    .about-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+    .about-text h3 { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+    .about-text p { font-size: 13px; color: #6b7280; line-height: 1.5; }
+
+    /* DIVIDER */
+    .divider { height: 1px; background: #1e1e2e; margin: 20px 0; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nav-btn active" onclick="showScreen('entrada')">⚡ Entrada</button>
+  <button class="nav-btn" onclick="showScreen('inmueble')">🏠 Inmueble</button>
+  <button class="nav-btn" onclick="showScreen('tarea')">✅ Tarea</button>
+  <button class="nav-btn" onclick="showScreen('ajustes')">⚙️ Ajustes</button>
+</nav>
+
+<!-- ===================== ENTRADA RÁPIDA ===================== -->
+<div class="screen active" id="screen-entrada">
+  <div class="header">
+    <div class="header-icon">⚡</div>
+    <div>
+      <h1>Entrada Rápida</h1>
+      <p>Habla o escribe, la IA lo organiza</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📝 Describe lo que pasó</div>
+    <div class="input-wrap">
+      <textarea id="textoEntrada" rows="5" placeholder="Toca 🎙️ y habla, o escribe aquí...&#10;&#10;Ej: Carlos me llamó, busca piso 3 hab en centro, presupuesto 280k, muy interesado"></textarea>
+      <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎙️</button>
+    </div>
+    <div class="recording-indicator" id="recIndicator">
+      <div class="rec-dot"></div>
+      <span>Escuchando... toca ⏹ para parar</span>
+    </div>
+    <button class="btn btn-primary" id="btnAnalizar" onclick="analizar()">Analizar con IA →</button>
+  </div>
+
+  <div id="resultadoEntrada"></div>
+
+  <div class="examples" id="ejemplosEntrada">
+    <div class="examples-title">Ejemplos</div>
+    <div class="example-item" onclick="setEjemplo(0)">Carlos me llamó, busca piso 3 hab en centro, presupuesto 280k, muy interesado</div>
+    <div class="example-item" onclick="setEjemplo(1)">María quiere vender su chalet en la sierra, 450k, llamarla el lunes</div>
+    <div class="example-item" onclick="setEjemplo(2)">Inversor busca local comercial zona norte, rentabilidad 6%, hasta 600k</div>
+  </div>
+</div>
+
+<!-- ===================== NUEVO INMUEBLE ===================== -->
+<div class="screen" id="screen-inmueble">
+  <div class="header">
+    <div class="header-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8)">🏠</div>
+    <div>
+      <h1>Nuevo Inmueble</h1>
+      <p>Registra una captación</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="field">
+      <label>Referencia</label>
+      <input type="text" id="inmRef" placeholder="INM-001" />
+    </div>
+    <div class="field">
+      <label>Dirección</label>
+      <input type="text" id="inmDir" placeholder="Calle Mayor, 4" />
+    </div>
+    <div class="field">
+      <label>Zona</label>
+      <input type="text" id="inmZona" placeholder="Centro, Norte, Sur..." />
+    </div>
+    <div class="field">
+      <label>Tipo</label>
+      <select id="inmTipo">
+        <option value="">Seleccionar...</option>
+        <option>🏢 Piso</option>
+        <option>🏠 Casa</option>
+        <option>🏡 Chalet</option>
+        <option>🏗️ Ático</option>
+        <option>🏪 Local</option>
+        <option>🌿 Terreno</option>
+        <option>💎 Lujo</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Precio (€)</label>
+      <input type="number" id="inmPrecio" placeholder="280000" />
+    </div>
+    <div class="field">
+      <label>Metros cuadrados</label>
+      <input type="number" id="inmMetros" placeholder="90" />
+    </div>
+    <div class="field">
+      <label>Estado</label>
+      <select id="inmEstado">
+        <option value="🔵 Captación">🔵 Captación</option>
+        <option value="🟢 Disponible">🟢 Disponible</option>
+        <option value="🟡 Negociación">🟡 Negociación</option>
+        <option value="🟠 Reservado">🟠 Reservado</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Observaciones</label>
+      <input type="text" id="inmObs" placeholder="Notas adicionales..." />
+    </div>
+    <button class="btn btn-primary" onclick="guardarInmueble()" id="btnInmueble">Guardar en Notion →</button>
+    <div id="msgInmueble"></div>
+  </div>
+</div>
+
+<!-- ===================== NUEVA TAREA ===================== -->
+<div class="screen" id="screen-tarea">
+  <div class="header">
+    <div class="header-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706)">✅</div>
+    <div>
+      <h1>Nueva Tarea</h1>
+      <p>Añade una acción pendiente</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="field">
+      <label>Tarea</label>
+      <input type="text" id="tareaTexto" placeholder="Llamar a Carlos, enviar propiedades..." />
+    </div>
+    <div class="field">
+      <label>Tipo</label>
+      <select id="tareaTipo">
+        <option>📞 Llamada</option>
+        <option>💬 WhatsApp</option>
+        <option>🏠 Visita</option>
+        <option>📋 Captación</option>
+        <option>📄 Documento</option>
+        <option>📝 Gestión</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Categoría</label>
+      <select id="tareaCategoria">
+        <option>🔴 Urgente</option>
+        <option>🟠 Importante</option>
+        <option>🔵 Seguimiento</option>
+        <option>🟢 Delegable</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Prioridad</label>
+      <select id="tareaPrioridad">
+        <option>🔴 Alta</option>
+        <option>🟠 Media</option>
+        <option>🟢 Baja</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Fecha límite</label>
+      <input type="date" id="tareaFecha" />
+    </div>
+    <div class="field">
+      <label>Notas</label>
+      <input type="text" id="tareaNotas" placeholder="Detalles adicionales..." />
+    </div>
+    <button class="btn btn-primary" onclick="guardarTarea()" id="btnTarea">Guardar en Notion →</button>
+    <div id="msgTarea"></div>
+  </div>
+</div>
+
+<!-- ===================== AJUSTES ===================== -->
+<div class="screen" id="screen-ajustes">
+  <div class="header">
+    <div class="header-icon" style="background: linear-gradient(135deg, #6b7280, #4b5563)">⚙️</div>
+    <div>
+      <h1>Ajustes</h1>
+      <p>Configuración del CRM</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔑 Conexión Notion</div>
+    <div class="field">
+      <label>Token de integración</label>
+      <input type="password" id="ajToken" placeholder="ntn_..." />
+    </div>
+    <div class="field">
+      <label>ID Base Clientes</label>
+      <input type="text" id="ajClientes" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+    </div>
+    <div class="field">
+      <label>ID Base Inmuebles</label>
+      <input type="text" id="ajInmuebles" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+    </div>
+    <div class="field">
+      <label>ID Base Tareas</label>
+      <input type="text" id="ajTareas" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+    </div>
+    <button class="btn btn-primary" onclick="guardarAjustes()">Guardar ajustes</button>
+    <div id="msgAjustes"></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="card">
+    <div class="card-title">ℹ️ Acerca de</div>
+    <div class="about-item">
+      <div class="about-icon">⚡</div>
+      <div class="about-text">
+        <h3>CRM Inmobiliario Pro</h3>
+        <p>Versión 1.0 — Entrada rápida con IA conectada a Notion</p>
+      </div>
+    </div>
+    <div class="about-item">
+      <div class="about-icon">🎙️</div>
+      <div class="about-text">
+        <h3>Reconocimiento de voz</h3>
+        <p>Habla directamente en la app. Requiere Chrome y permisos de micrófono.</p>
+      </div>
+    </div>
+    <div class="about-item">
+      <div class="about-icon">🔒</div>
+      <div class="about-text">
+        <h3>Privacidad</h3>
+        <p>Tus datos se guardan solo en tu Notion. Nada se almacena externamente.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ============ CONFIG ============
+  const CONFIG = {
+    token: "TU_TOKEN_AQUI",
+    clientes: "TU_ID_CLIENTES_AQUI",
+    inmuebles: localStorage.getItem("crm_inmuebles") || "",
+    tareas: localStorage.getItem("crm_tareas") || "",
+  };
+
+  const EJEMPLOS = [
+    "Carlos me llamó, busca piso 3 hab en centro, presupuesto 280k, muy interesado",
+    "María quiere vender su chalet en la sierra, 450k, llamarla el lunes",
+    "Inversor busca local comercial zona norte, rentabilidad 6%, hasta 600k",
+  ];
+
+  // ============ NAV ============
+  function showScreen(name) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+    document.getElementById("screen-" + name).classList.add("active");
+    event.target.classList.add("active");
+  }
+
+  function setEjemplo(i) {
+    document.getElementById("textoEntrada").value = EJEMPLOS[i];
+    document.getElementById("ejemplosEntrada").style.display = "none";
+  }
+
+  // ============ MICRÓFONO ============
+  let recognition = null;
+  let grabando = false;
+
+  function toggleMic() {
+    if (grabando) {
+      recognition && recognition.stop();
+      setGrabando(false);
+      return;
+    }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      mostrarMensaje("resultadoEntrada", "Tu navegador no soporta voz. Usa Chrome.", "error");
+      return;
+    }
+    recognition = new SR();
+    recognition.lang = "es-ES";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.onresult = e => {
+      let t = "";
+      for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+      document.getElementById("textoEntrada").value = t;
+    };
+    recognition.onerror = () => setGrabando(false);
+    recognition.onend = () => setGrabando(false);
+    recognition.start();
+    setGrabando(true);
+  }
+
+  function setGrabando(val) {
+    grabando = val;
+    document.getElementById("micBtn").className = "mic-btn" + (val ? " recording" : "");
+    document.getElementById("micBtn").textContent = val ? "⏹" : "🎙️";
+    document.getElementById("textoEntrada").className = val ? "recording" : "";
+    document.getElementById("recIndicator").className = "recording-indicator" + (val ? " visible" : "");
+  }
+
+  // ============ ANALIZAR ============
+  async function analizar() {
+    const texto = document.getElementById("textoEntrada").value.trim();
+    if (!texto) return;
+    if (grabando) { recognition && recognition.stop(); setGrabando(false); }
+
+    const btn = document.getElementById("btnAnalizar");
+    btn.textContent = "⏳ Analizando...";
+    btn.disabled = true;
+    document.getElementById("resultadoEntrada").innerHTML = "";
+    document.getElementById("ejemplosEntrada").style.display = "none";
+
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          messages: [{
+            role: "user",
+            content: `Analiza este texto inmobiliario y devuelve SOLO un JSON sin markdown ni explicaciones:
+Texto: "${texto}"
+
+{"nombre":null,"telefono":null,"email":null,"tipo":null,"estadoLead":null,"presupuesto":null,"zona":null,"tipoInmueble":null,"nota":null,"tarea":null}
+
+Reglas:
+- tipo: "🛒 Comprador", "🏡 Vendedor", "💼 Inversor" o "🔑 Propietario"
+- estadoLead: "🔥 Caliente", "🟡 Templado" o "❄️ Frío"
+- presupuesto: número sin símbolos o null
+- tarea: acción más importante`
+          }]
+        })
+      });
+
+      const data = await res.json();
+      const raw = data.content?.[0]?.text || "{}";
+      const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
+      mostrarResultado(parsed);
+    } catch (e) {
+      mostrarMensaje("resultadoEntrada", "Error al analizar. Inténtalo de nuevo.", "error");
+    } finally {
+      btn.textContent = "Analizar con IA →";
+      btn.disabled = false;
+    }
+  }
+
+  function mostrarResultado(d) {
+    const campos = [
+      ["👤 Nombre", d.nombre],
+      ["📱 Teléfono", d.telefono],
+      ["📧 Email", d.email],
+      ["🏷️ Tipo", d.tipo],
+      ["🔥 Estado Lead", d.estadoLead],
+      ["💰 Presupuesto", d.presupuesto ? Number(d.presupuesto).toLocaleString("es") + "€" : null],
+      ["📍 Zona", d.zona],
+      ["🏠 Inmueble", d.tipoInmueble],
+      ["📝 Nota", d.nota],
+      ["✅ Tarea", d.tarea],
+    ].filter(([, v]) => v);
+
+    const rows = campos.map(([k, v]) => `
+      <div class="result-row">
+        <span class="result-key">${k}</span>
+        <span class="result-val">${v}</span>
+      </div>`).join("");
+
+    document.getElementById("resultadoEntrada").innerHTML = `
+      <div class="result-card">
+        <div class="result-header">
+          <div class="result-dot"></div>
+          <span class="result-label">Análisis completado</span>
+        </div>
+        <div class="result-rows">${rows}</div>
+        <div class="result-actions">
+          <button class="btn btn-save" onclick="guardarCliente(${encodeData(d)})">Guardar en Notion</button>
+          <div id="msgGuardar"></div>
+        </div>
+      </div>`;
+  }
+
+  function encodeData(d) {
+    return "'" + btoa(unescape(encodeURIComponent(JSON.stringify(d)))) + "'";
+  }
+
+  // ============ GUARDAR CLIENTE ============
+  async function guardarCliente(encoded) {
+    const d = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+    const btn = event.target;
+    btn.textContent = "Guardando...";
+    btn.disabled = true;
+
+    try {
+      const props = {
+        "Nombre": { title: [{ text: { content: d.nombre || "Sin nombre" } }] }
+      };
+      if (d.telefono) props["Teléfono"] = { phone_number: String(d.telefono) };
+      if (d.email) props["Email"] = { email: d.email };
+      if (d.tipo) props["Tipo"] = { select: { name: d.tipo } };
+      if (d.estadoLead) props["Estado Lead"] = { select: { name: d.estadoLead } };
+      if (d.zona) props["Zona de Interés"] = { multi_select: [{ name: d.zona }] };
+      if (d.nota) props["Observaciones"] = { rich_text: [{ text: { content: d.nota } }] };
+      if (d.presupuesto) props["Presupuesto (€)"] = { number: Number(d.presupuesto) };
+
+      const res = await notionPost("pages", { parent: { database_id: CONFIG.clientes }, properties: props });
+
+      if (res.ok) {
+        btn.textContent = "✓ Guardado";
+        btn.className = "btn btn-success";
+        setTimeout(() => {
+          document.getElementById("textoEntrada").value = "";
+          document.getElementById("resultadoEntrada").innerHTML = "";
+          document.getElementById("ejemplosEntrada").style.display = "block";
+        }, 2500);
+      } else {
+        const err = await res.json();
+        mostrarMensaje("msgGuardar", "Error: " + (err.message || "Revisa la configuración"), "error");
+        btn.textContent = "Guardar en Notion";
+        btn.disabled = false;
+      }
+    } catch (e) {
+      mostrarMensaje("msgGuardar", "Error de conexión", "error");
+      btn.textContent = "Guardar en Notion";
+      btn.disabled = false;
+    }
+  }
+
+  // ============ GUARDAR INMUEBLE ============
+  async function guardarInmueble() {
+    const dbId = CONFIG.inmuebles || localStorage.getItem("crm_inmuebles");
+    if (!dbId) {
+      mostrarMensaje("msgInmueble", "Configura el ID de la base de Inmuebles en Ajustes ⚙️", "error");
+      return;
+    }
+
+    const btn = document.getElementById("btnInmueble");
+    btn.textContent = "Guardando..."; btn.disabled = true;
+
+    const props = {
+      "Referencia": { title: [{ text: { content: document.getElementById("inmRef").value || "Sin ref" } }] }
+    };
+    const dir = document.getElementById("inmDir").value;
+    const zona = document.getElementById("inmZona").value;
+    const tipo = document.getElementById("inmTipo").value;
+    const precio = document.getElementById("inmPrecio").value;
+    const metros = document.getElementById("inmMetros").value;
+    const estado = document.getElementById("inmEstado").value;
+    const obs = document.getElementById("inmObs").value;
+
+    if (dir) props["Dirección"] = { rich_text: [{ text: { content: dir } }] };
+    if (zona) props["Zona"] = { select: { name: zona } };
+    if (tipo) props["Tipo Inmueble"] = { select: { name: tipo } };
+    if (precio) props["Precio (€)"] = { number: Number(precio) };
+    if (metros) props["Metros Cuadrados"] = { number: Number(metros) };
+    if (estado) props["Estado"] = { select: { name: estado } };
+    if (obs) props["Observaciones"] = { rich_text: [{ text: { content: obs } }] };
+
+    try {
+      const res = await notionPost("pages", { parent: { database_id: dbId }, properties: props });
+      if (res.ok) {
+        mostrarMensaje("msgInmueble", "✅ Inmueble guardado en Notion", "success");
+        ["inmRef","inmDir","inmZona","inmPrecio","inmMetros","inmObs"].forEach(id => document.getElementById(id).value = "");
+      } else {
+        const err = await res.json();
+        mostrarMensaje("msgInmueble", "Error: " + (err.message || "Revisa la configuración"), "error");
+      }
+    } catch(e) {
+      mostrarMensaje("msgInmueble", "Error de conexión", "error");
+    } finally {
+      btn.textContent = "Guardar en Notion →"; btn.disabled = false;
+    }
+  }
+
+  // ============ GUARDAR TAREA ============
+  async function guardarTarea() {
+    const dbId = CONFIG.tareas || localStorage.getItem("crm_tareas");
+    if (!dbId) {
+      mostrarMensaje("msgTarea", "Configura el ID de la base de Tareas en Ajustes ⚙️", "error");
+      return;
+    }
+
+    const btn = document.getElementById("btnTarea");
+    btn.textContent = "Guardando..."; btn.disabled = true;
+
+    const texto = document.getElementById("tareaTexto").value;
+    if (!texto) { mostrarMensaje("msgTarea", "Escribe la tarea", "error"); btn.textContent = "Guardar en Notion →"; btn.disabled = false; return; }
+
+    const props = {
+      "Tarea": { title: [{ text: { content: texto } }] },
+      "Tipo": { select: { name: document.getElementById("tareaTipo").value } },
+      "Categoría": { select: { name: document.getElementById("tareaCategoria").value } },
+      "Prioridad": { select: { name: document.getElementById("tareaPrioridad").value } },
+      "Estado": { select: { name: "⏳ Pendiente" } },
+    };
+
+    const fecha = document.getElementById("tareaFecha").value;
+    const notas = document.getElementById("tareaNotas").value;
+    if (fecha) props["Fecha Límite"] = { date: { start: fecha } };
+    if (notas) props["Notas"] = { rich_text: [{ text: { content: notas } }] };
+
+    try {
+      const res = await notionPost("pages", { parent: { database_id: dbId }, properties: props });
+      if (res.ok) {
+        mostrarMensaje("msgTarea", "✅ Tarea guardada en Notion", "success");
+        document.getElementById("tareaTexto").value = "";
+        document.getElementById("tareaFecha").value = "";
+        document.getElementById("tareaNotas").value = "";
+      } else {
+        const err = await res.json();
+        mostrarMensaje("msgTarea", "Error: " + (err.message || "Revisa la configuración"), "error");
+      }
+    } catch(e) {
+      mostrarMensaje("msgTarea", "Error de conexión", "error");
+    } finally {
+      btn.textContent = "Guardar en Notion →"; btn.disabled = false;
+    }
+  }
+
+  // ============ AJUSTES ============
+  function guardarAjustes() {
+    const token = document.getElementById("ajToken").value.trim();
+    const clientes = document.getElementById("ajClientes").value.trim();
+    const inmuebles = document.getElementById("ajInmuebles").value.trim();
+    const tareas = document.getElementById("ajTareas").value.trim();
+
+    if (token) { CONFIG.token = token; localStorage.setItem("crm_token", token); }
+    if (clientes) { CONFIG.clientes = clientes; localStorage.setItem("crm_clientes", clientes); }
+    if (inmuebles) { CONFIG.inmuebles = inmuebles; localStorage.setItem("crm_inmuebles", inmuebles); }
+    if (tareas) { CONFIG.tareas = tareas; localStorage.setItem("crm_tareas", tareas); }
+
+    mostrarMensaje("msgAjustes", "✅ Ajustes guardados", "success");
+  }
+
+  // ============ HELPERS ============
+  function notionPost(endpoint, body) {
+    const token = CONFIG.token || localStorage.getItem("crm_token");
+    return fetch(`https://api.notion.com/v1/${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "Notion-Version": "2022-06-28"
+      },
+      body: JSON.stringify(body)
+    });
+  }
+
+  function mostrarMensaje(id, texto, tipo) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = `<div class="alert alert-${tipo === "error" ? "error" : "success"}">${texto}</div>`;
+    setTimeout(() => { if(el) el.innerHTML = ""; }, 4000);
+  }
+
+  // Cargar ajustes guardados
+  window.onload = () => {
+    const t = localStorage.getItem("crm_token");
+    const c = localStorage.getItem("crm_clientes");
+    const i = localStorage.getItem("crm_inmuebles");
+    const ta = localStorage.getItem("crm_tareas");
+    if (t) { document.getElementById("ajToken").value = t; CONFIG.token = t; }
+    if (c) { document.getElementById("ajClientes").value = c; CONFIG.clientes = c; }
+    if (i) { document.getElementById("ajInmuebles").value = i; CONFIG.inmuebles = i; }
+    if (ta) { document.getElementById("ajTareas").value = ta; CONFIG.tareas = ta; }
+  };
+</script>
+</body>
+</html>
